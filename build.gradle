@@ -16,6 +16,7 @@ buildscript {
 }
 
 allprojects {
+    ext.anko_version='0.10.5'
     repositories {
         google()
         jcenter()

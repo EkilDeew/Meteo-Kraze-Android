@@ -24,5 +24,7 @@ public class MeteoService {
 
     var cities: ArrayList<WeatherData> = ArrayList()
 
+    val PICK_CITY_REQUEST = 1
+
 
 }

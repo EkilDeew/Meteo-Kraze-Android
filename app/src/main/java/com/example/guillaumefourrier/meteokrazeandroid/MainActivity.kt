@@ -3,10 +3,12 @@ package com.example.guillaumefourrier.meteokrazeandroid
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
 import android.support.design.widget.Snackbar
+import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
@@ -24,13 +26,20 @@ import com.android.volley.toolbox.Volley
 import com.beust.klaxon.Klaxon
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.squareup.moshi.KotlinJsonAdapterFactory
+import com.squareup.moshi.Moshi
 
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
+import java.lang.Thread.sleep
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    private val apiKey = "4271a4992f162462f555468b8aa580f2"
+
+    val PREMISSION_LOCATION_REQUEST = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,29 +47,28 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show()
+           val intent = Intent(this, AddCity::class.java)
+            startActivityForResult(intent, MeteoService.shared.PICK_CITY_REQUEST)
         }
 
-       val permission = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION)
-
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-           // finish()
-        }
-
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        fusedLocationClient.lastLocation.addOnSuccessListener { location : Location? ->
-            if (location != null) {
-                getWeather(location.longitude, location.latitude)
+        if (ContextCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                            Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
+                        PREMISSION_LOCATION_REQUEST)
             }
+        } else {
+            getLocationWeather()
         }
-
-        refresh()
 
         getWeather("Paris")
-        getWeather("Nice")
-        getWeather("New York")
+        getWeather("London")
+
+        refresh()
 
     }
 
@@ -80,13 +88,24 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val apiKey = "4271a4992f162462f555468b8aa580f2"
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        when (requestCode) {
+            MeteoService.shared.PICK_CITY_REQUEST -> {
+                super.onActivityResult(requestCode, resultCode, data)
+                if (resultCode == RESULT_OK) {
+                    val city = data?.getSerializableExtra("city") as WeatherData
+                    refresh()
+                }
+            }
+            else -> super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
 
     fun getWeather(cityName: String) {
         val queue = Volley.newRequestQueue(this)
 
         val url = "http://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + apiKey
-        requestAndgetData(queue, url)
+        requestAndgetData(queue, url, false)
 
     }
 
@@ -95,35 +114,40 @@ class MainActivity : AppCompatActivity() {
 
         val url = "http://api.openweathermap.org/data/2.5/weather?lat=" +
                 lat + "&lon=" + lon + "&appid=" + apiKey
-        requestAndgetData(queue, url)
+        requestAndgetData(queue, url, true)
     }
 
     fun refresh() {
         if (MeteoService.shared.cities.isEmpty()) {
-            loading_text.visibility = View.VISIBLE
+            loading_view.visibility = View.VISIBLE
             city_list_view.visibility = View.GONE
         } else {
-            loading_text.visibility = View.GONE
+            loading_view.visibility = View.GONE
             city_list_view.visibility = View.VISIBLE
+        }
+
+        for ( data in MeteoService.shared.cities ) {
+            if (data.isCurr) {
+                MeteoService.shared.cities.remove(data)
+                MeteoService.shared.cities.add(0, data)
+            }
         }
 
         city_list_view.adapter = CityCardAdapter(this, MeteoService.shared.cities)
     }
 
-    private fun requestAndgetData(queue: RequestQueue, url: String) {
+    private fun requestAndgetData(queue: RequestQueue, url: String, currentLoc: Boolean) {
 
         val stringRequest = StringRequest(Request.Method.GET, url,
                 Response.Listener<String> { response ->
                     val klaxon = Klaxon()
-                    val data = klaxon.parse<WeatherData>(response)
-
+                    var data = klaxon.parse<WeatherData>(response)
+                    data?.isCurr = currentLoc
                     if (data != null) {
                         MeteoService.shared.cities.add(data)
                     }
-
                     runOnUiThread {
                         refresh()
-                        loading_text.text = "Meteo a paname " + data?.main?.temp?.minus(273.15F)?.toInt() + "°C"
                     }
                 },
                 Response.ErrorListener {
@@ -133,6 +157,32 @@ class MainActivity : AppCompatActivity() {
                 })
 
         queue.add(stringRequest)
+    }
+
+    private fun getLocationWeather() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+            fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                if (location != null) {
+                    getWeather(location.longitude, location.latitude)
+                }
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int,
+                                            permissions: Array<String>, grantResults: IntArray) {
+        when (requestCode) {
+            PREMISSION_LOCATION_REQUEST -> {
+                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    getLocationWeather()
+                }
+                return
+            }
+            else -> { // Ignore all other requests. }
+            }
+        }
     }
 
 }

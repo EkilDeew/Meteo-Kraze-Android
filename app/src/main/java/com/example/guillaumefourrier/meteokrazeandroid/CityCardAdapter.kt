@@ -1,12 +1,19 @@
 package com.example.guillaumefourrier.meteokrazeandroid
 
 import android.content.Context
+import android.icu.text.SimpleDateFormat
 import android.support.v7.widget.RecyclerView
+import android.text.format.DateFormat
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.TextView
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.util.*
 
 class CityCardAdapter(private val context: Context,
                       private val data: ArrayList<WeatherData>) : BaseAdapter() {
@@ -30,8 +37,11 @@ class CityCardAdapter(private val context: Context,
         }
 
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View? {
+
             val view: View?
             val vh: ListRowHolder
+         //   DateTimeFormatter.ISO_INSTANT.format(Instant.now())
+
             if (convertView == null) {
                 view = this.mInflator.inflate(R.layout.city_weather, parent, false)
                 vh = ListRowHolder(view)
@@ -47,6 +57,7 @@ class CityCardAdapter(private val context: Context,
                 vh.isCurrentPos.visibility = View.VISIBLE
             } else {
                 vh.isCurrentPos.visibility = View.GONE
+            }
 
             vh.cityName.text = city.name
             vh.description.text = city.weather[0].description
@@ -56,9 +67,13 @@ class CityCardAdapter(private val context: Context,
             vh.humidity.text = "Humidity : " + city.main.humidity + "%"
             vh.wind.text = "Wind : " + city.wind.speed + " m/s"
 
+         //   val sdf = SimpleDateFormat("hh:mm:ss")
+
+            Log.d("Guillaume", "sunrise : " + city.sys.sunrise + " sunset : " + city.sys.sunset)
+        //    vh.sunrise.text = "Sunrise : " + sdf.format(city.sys.sunrise)
+        //   vh.sunset.text = "Sunset : " + sdf.format(city.sys.sunset)
+
             return view
-        }
-        return null
     }
 
     private class ListRowHolder(row: View?) {
@@ -71,6 +86,8 @@ class CityCardAdapter(private val context: Context,
         val maxTemp: TextView
         val humidity: TextView
         val wind: TextView
+        val sunrise: TextView
+        val sunset: TextView
 
         init {
             this.isCurrentPos = row?.findViewById(R.id.current_pos_text) as TextView
@@ -81,6 +98,8 @@ class CityCardAdapter(private val context: Context,
             this.maxTemp = row.findViewById(R.id.weather_max_temp) as TextView
             this.humidity = row.findViewById(R.id.weather_humidity) as TextView
             this.wind = row.findViewById(R.id.weather_wind) as TextView
+            this.sunrise = row.findViewById(R.id.weather_sunrise) as TextView
+            this.sunset = row.findViewById(R.id.weather_sunset) as TextView
         }
     }
 
