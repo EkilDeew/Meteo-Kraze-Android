@@ -1,7 +1,7 @@
 package com.example.guillaumefourrier.meteokrazeandroid
 
 import android.content.Context
-import android.icu.text.SimpleDateFormat
+import java.text.SimpleDateFormat
 import android.support.v7.widget.RecyclerView
 import android.text.format.DateFormat
 import android.util.Log
@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.TextView
+import java.sql.Timestamp
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -37,11 +38,8 @@ class CityCardAdapter(private val context: Context,
         }
 
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View? {
-
             val view: View?
             val vh: ListRowHolder
-         //   DateTimeFormatter.ISO_INSTANT.format(Instant.now())
-
             if (convertView == null) {
                 view = this.mInflator.inflate(R.layout.city_weather, parent, false)
                 vh = ListRowHolder(view)
@@ -67,11 +65,13 @@ class CityCardAdapter(private val context: Context,
             vh.humidity.text = "Humidity : " + city.main.humidity + "%"
             vh.wind.text = "Wind : " + city.wind.speed + " m/s"
 
-         //   val sdf = SimpleDateFormat("hh:mm:ss")
-
             Log.d("Guillaume", "sunrise : " + city.sys.sunrise + " sunset : " + city.sys.sunset)
-        //    vh.sunrise.text = "Sunrise : " + sdf.format(city.sys.sunrise)
-        //   vh.sunset.text = "Sunset : " + sdf.format(city.sys.sunset)
+
+            val sf = SimpleDateFormat("hh:mm")
+            val sunsetTT = Date(city.sys.sunset * 1000L) // ???? ?? ?? ??  @TODO
+            val sunriseTT = Date(city.sys.sunrise * 1000L)
+            vh.sunrise.text = "Sunrise : " + sf.format(sunriseTT)
+            vh.sunset.text = "Sunset : " + sf.format(sunsetTT)
 
             return view
     }
