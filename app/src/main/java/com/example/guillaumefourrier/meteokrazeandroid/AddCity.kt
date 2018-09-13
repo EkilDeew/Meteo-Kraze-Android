@@ -27,10 +27,7 @@ import java.io.Serializable
 
 class AddCity : AppCompatActivity(), Serializable {
 
-    var cities = ArrayList<Cities>()
     private val apiKey = "4271a4992f162462f555468b8aa580f2"
-
-    var dialog: ProgressDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,55 +37,13 @@ class AddCity : AppCompatActivity(), Serializable {
 
         autocomplete_text_view.setOnKeyListener { v, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP) {
-                this.dialog = indeterminateProgressDialog(message = "Please wait a bit…", title = "Fetching data")
-                addCity(autocomplete_text_view.text.toString().trim())
+                val returnIntent = Intent()
+                returnIntent.putExtra("city", autocomplete_text_view.text.toString().trim())
+                setResult(Activity.RESULT_OK, returnIntent)
+                finish()
             }
             true
         }
-    }
-
-    fun addCity(cityName: String) {
-        val queue = Volley.newRequestQueue(this)
-
-        val url = "http://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + apiKey
-
-        val stringRequest = StringRequest(Request.Method.GET, url,
-                Response.Listener<String> { response ->
-                    val klaxon = Klaxon()
-                    var data = klaxon.parse<WeatherData>(response)
-                    data?.isCurr = false
-                    if (data != null) {
-                        MeteoService.shared.cities.add(data)
-                    }
-                    val returnIntent = Intent()
-                    returnIntent.putExtra("city", data)
-                    setResult(Activity.RESULT_OK, returnIntent)
-                    this.dialog?.dismiss()
-                    finish()
-
-                },
-                Response.ErrorListener {
-                    Toast.makeText(this, it.localizedMessage, Toast.LENGTH_LONG).show()
-                    val returnIntent = Intent()
-                    setResult(Activity.RESULT_CANCELED, returnIntent)
-                    this.dialog?.dismiss()
-                    finish()
-
-                })
-
-        queue.add(stringRequest)
-    }
-
-    override fun onNavigateUp(): Boolean {
-        if (!autocomplete_text_view.text.isEmpty()) {
-            this.dialog = indeterminateProgressDialog(message = "Please wait a bit…", title = "Fetching data")
-            addCity(autocomplete_text_view.text.toString().trim())
-        } else {
-            super.onNavigateUp()
-            finish()
-        }
-        super.onNavigateUp()
-        return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {

@@ -65,10 +65,10 @@ class MainActivity : AppCompatActivity() {
             getLocationWeather()
         }
 
+        refresh()
+
         getWeather("Paris")
         getWeather("London")
-
-        refresh()
 
     }
 
@@ -92,9 +92,12 @@ class MainActivity : AppCompatActivity() {
         when (requestCode) {
             MeteoService.shared.PICK_CITY_REQUEST -> {
                 super.onActivityResult(requestCode, resultCode, data)
-                if (resultCode == RESULT_OK) {
-                    val city = data?.getSerializableExtra("city") as WeatherData
-                    refresh()
+                if (resultCode == RESULT_OK && data != null) {
+                    val city = data.getStringExtra("city")
+                    if (city != null) {
+                        getWeather(city)
+                    }
+
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
@@ -124,20 +127,33 @@ class MainActivity : AppCompatActivity() {
         } else {
             loading_view.visibility = View.GONE
             city_list_view.visibility = View.VISIBLE
-        }
 
-        for ( data in MeteoService.shared.cities ) {
-            if (data.isCurr) {
-                MeteoService.shared.cities.remove(data)
-                MeteoService.shared.cities.add(0, data)
+
+            if (!MeteoService.shared.cities[0].isCurr) {
+                for (city in MeteoService.shared.cities) {
+                    if (city.isCurr) {
+                        removeCurrentPosFromArray()
+                        MeteoService.shared.cities.add(0, city)
+
+                    }
+                }
             }
         }
-
         city_list_view.adapter = CityCardAdapter(this, MeteoService.shared.cities)
     }
 
-    private fun requestAndgetData(queue: RequestQueue, url: String, currentLoc: Boolean) {
+    fun removeCurrentPosFromArray() {
+        var i = 0
+        while (i < MeteoService.shared.cities.count()) {
+            if (MeteoService.shared.cities[i].isCurr) {
+                MeteoService.shared.cities.removeAt(i)
+                return
+            }
+            i++
+        }
+    }
 
+    private fun requestAndgetData(queue: RequestQueue, url: String, currentLoc: Boolean) {
         val stringRequest = StringRequest(Request.Method.GET, url,
                 Response.Listener<String> { response ->
                     val klaxon = Klaxon()

@@ -49,7 +49,7 @@ class CityCardAdapter(private val context: Context,
                 vh = view.tag as ListRowHolder
             }
 
-            val city = data.get(position)
+            val city = data[position]
 
             if (city.isCurr) {
                 vh.isCurrentPos.visibility = View.VISIBLE
@@ -65,9 +65,7 @@ class CityCardAdapter(private val context: Context,
             vh.humidity.text = "Humidity : " + city.main.humidity + "%"
             vh.wind.text = "Wind : " + city.wind.speed + " m/s"
 
-            Log.d("Guillaume", "sunrise : " + city.sys.sunrise + " sunset : " + city.sys.sunset)
-
-            val sf = SimpleDateFormat("hh:mm")
+            val sf = SimpleDateFormat("HH:mm")
             val sunsetTT = Date(city.sys.sunset * 1000L) // ???? ?? ?? ??  @TODO
             val sunriseTT = Date(city.sys.sunrise * 1000L)
             vh.sunrise.text = "Sunrise : " + sf.format(sunriseTT)

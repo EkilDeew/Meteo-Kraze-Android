@@ -19,6 +19,8 @@
             android:id="@+id/autocomplete_text_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:inputType="text"
             android:hint="City name"/>
 
         <ListView
