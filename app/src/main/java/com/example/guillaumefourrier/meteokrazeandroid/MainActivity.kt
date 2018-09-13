@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.AsyncTask
 import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
@@ -31,6 +32,9 @@ import com.squareup.moshi.Moshi
 
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
+import org.jetbrains.anko.doAsync
+import org.jetbrains.anko.doAsyncResult
+import org.jetbrains.anko.uiThread
 import java.lang.Thread.sleep
 
 class MainActivity : AppCompatActivity() {
@@ -64,11 +68,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             getLocationWeather()
         }
-
-        refresh()
-
-        getWeather("Paris")
-        getWeather("London")
 
     }
 
@@ -127,8 +126,8 @@ class MainActivity : AppCompatActivity() {
         } else {
             loading_view.visibility = View.GONE
             city_list_view.visibility = View.VISIBLE
-
-
+        }
+        doAsync {
             if (!MeteoService.shared.cities[0].isCurr) {
                 for (city in MeteoService.shared.cities) {
                     if (city.isCurr) {
@@ -138,8 +137,10 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+            uiThread {
+                city_list_view.adapter = CityCardAdapter(it, MeteoService.shared.cities)
+            }
         }
-        city_list_view.adapter = CityCardAdapter(this, MeteoService.shared.cities)
     }
 
     fun removeCurrentPosFromArray() {

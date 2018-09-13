@@ -42,8 +42,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="15dp"
-        android:paddingStart="15dp"
-        android:paddingEnd="15dp"
+        android:dividerHeight="0dp"
+        android:divider="@null"
         android:visibility="gone">
 
 
