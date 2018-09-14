@@ -17,6 +17,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.AdapterView
 import android.widget.ListView
 import android.widget.TextView
 import com.android.volley.Request
@@ -32,10 +33,7 @@ import com.squareup.moshi.Moshi
 
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
-import org.jetbrains.anko.doAsync
-import org.jetbrains.anko.doAsyncResult
-import org.jetbrains.anko.share
-import org.jetbrains.anko.uiThread
+import org.jetbrains.anko.*
 import java.lang.Thread.sleep
 
 class MainActivity : AppCompatActivity() {
@@ -103,6 +101,7 @@ class MainActivity : AppCompatActivity() {
                 super.onActivityResult(requestCode, resultCode, data)
                 if (resultCode == RESULT_OK && data != null) {
                     val city = data.getStringExtra("city")
+                    Log.d("Guillaume", "Got result intent for city : " + city)
                     if (city != null) {
                         getWeather(city)
                     }
@@ -136,8 +135,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             loading_view.visibility = View.GONE
             city_list_view.visibility = View.VISIBLE
-        }
-        doAsync {
+
             if (!MeteoService.shared.cities[0].isCurr) {
                 for (city in MeteoService.shared.cities) {
                     if (city.isCurr) {
@@ -147,10 +145,28 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            uiThread {
-                city_list_view.adapter = CityCardAdapter(it, MeteoService.shared.cities)
+            city_list_view.adapter = CityCardAdapter(this, MeteoService.shared.cities)
+            city_list_view.setOnItemLongClickListener { parent, view, position, id ->
+                val countries = listOf("Delete", "Cancel")
+                selector("Where are you from?", countries, { dialogInterface, i ->
+                    when (countries[i]) {
+                        "Delete" -> {
+                            MeteoService.shared.cities.removeAt(i)
+                            val sharedPref = this.getSharedPreferences(
+                                    MeteoService.shared.SHARED_PREF_NAME, Context.MODE_PRIVATE)
+                            with(sharedPref.edit()) {
+                                putStringSet(getString(R.string.shared_pref_key), MeteoService.shared.getCityNames())
+                                apply()
+                            }
+                            refresh()
+                        }
+                        else -> dialogInterface.dismiss()
+                    }
+                })
+                true
             }
         }
+
     }
 
     fun removeCurrentPosFromArray() {
@@ -178,11 +194,10 @@ class MainActivity : AppCompatActivity() {
                                 MeteoService.shared.SHARED_PREF_NAME, Context.MODE_PRIVATE)
                         with (sharedPref.edit()) {
                             putStringSet(getString(R.string.shared_pref_key), MeteoService.shared.getCityNames())
+                            apply()
                         }
                     }
-                    runOnUiThread {
-                        refresh()
-                    }
+                    refresh()
                 },
                 Response.ErrorListener {
                     runOnUiThread {
