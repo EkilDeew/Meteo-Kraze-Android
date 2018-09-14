@@ -147,22 +147,24 @@ class MainActivity : AppCompatActivity() {
             }
             city_list_view.adapter = CityCardAdapter(this, MeteoService.shared.cities)
             city_list_view.setOnItemLongClickListener { parent, view, position, id ->
-                val countries = listOf("Delete", "Cancel")
-                selector("Where are you from?", countries, { dialogInterface, i ->
-                    when (countries[i]) {
-                        "Delete" -> {
-                            MeteoService.shared.cities.removeAt(i)
-                            val sharedPref = this.getSharedPreferences(
-                                    MeteoService.shared.SHARED_PREF_NAME, Context.MODE_PRIVATE)
-                            with(sharedPref.edit()) {
-                                putStringSet(getString(R.string.shared_pref_key), MeteoService.shared.getCityNames())
-                                apply()
+                if (!MeteoService.shared.cities[position].isCurr) {
+                    val countries = listOf("Delete", "Cancel")
+                    selector("Where are you from?", countries, { dialogInterface, i ->
+                        when (countries[i]) {
+                            "Delete" -> {
+                                MeteoService.shared.cities.removeAt(i)
+                                val sharedPref = this.getSharedPreferences(
+                                        MeteoService.shared.SHARED_PREF_NAME, Context.MODE_PRIVATE)
+                                with(sharedPref.edit()) {
+                                    putStringSet(getString(R.string.shared_pref_key), MeteoService.shared.getCityNames())
+                                    apply()
+                                }
+                                refresh()
                             }
-                            refresh()
+                            else -> dialogInterface.dismiss()
                         }
-                        else -> dialogInterface.dismiss()
-                    }
-                })
+                    })
+                }
                 true
             }
         }
