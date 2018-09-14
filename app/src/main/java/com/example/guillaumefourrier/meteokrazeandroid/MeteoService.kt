@@ -22,9 +22,22 @@ public class MeteoService {
         val shared: MeteoService by lazy { Holder.INSTANCE }
     }
 
+    val SHARED_PREF_NAME = "meteo_kraze_pref"
+    val SHARED_PREF_KEY = "meteo_kraze_city"
+
     var cities: ArrayList<WeatherData> = ArrayList()
 
     val PICK_CITY_REQUEST = 1
+
+    fun getCityNames() : HashSet<String> {
+        val cities_name = HashSet<String>()
+        for (city in cities) {
+            if (!city.isCurr) {
+                cities_name.add(city.name)
+            }
+        }
+        return cities_name
+    }
 
 
 }

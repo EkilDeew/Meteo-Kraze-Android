@@ -23,11 +23,10 @@ import android.widget.Toast
 import org.jetbrains.anko.indeterminateProgressDialog
 import org.jetbrains.anko.progressDialog
 import java.io.Serializable
+import java.net.URLEncoder
 
 
-class AddCity : AppCompatActivity(), Serializable {
-
-    private val apiKey = "4271a4992f162462f555468b8aa580f2"
+class AddCity : AppCompatActivity(){
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,7 +37,7 @@ class AddCity : AppCompatActivity(), Serializable {
         autocomplete_text_view.setOnKeyListener { v, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP) {
                 val returnIntent = Intent()
-                returnIntent.putExtra("city", autocomplete_text_view.text.toString().trim())
+                returnIntent.putExtra("city", URLEncoder.encode(autocomplete_text_view.text.toString().trim(), "utf-8"))
                 setResult(Activity.RESULT_OK, returnIntent)
                 finish()
             }

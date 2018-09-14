@@ -34,6 +34,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.doAsyncResult
+import org.jetbrains.anko.share
 import org.jetbrains.anko.uiThread
 import java.lang.Thread.sleep
 
@@ -67,6 +68,15 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             getLocationWeather()
+        }
+
+        val sharedPref = this.getSharedPreferences(
+                MeteoService.shared.SHARED_PREF_NAME, Context.MODE_PRIVATE)
+        val cities = sharedPref.getStringSet(resources.getString(R.string.shared_pref_key), null)
+        if (cities != null) {
+            for (city in cities) {
+                getWeather(city)
+            }
         }
 
     }
@@ -162,6 +172,13 @@ class MainActivity : AppCompatActivity() {
                     data?.isCurr = currentLoc
                     if (data != null) {
                         MeteoService.shared.cities.add(data)
+                    }
+                    if (data?.isCurr != true) {
+                        val sharedPref = this.getSharedPreferences(
+                                MeteoService.shared.SHARED_PREF_NAME, Context.MODE_PRIVATE)
+                        with (sharedPref.edit()) {
+                            putStringSet(getString(R.string.shared_pref_key), MeteoService.shared.getCityNames())
+                        }
                     }
                     runOnUiThread {
                         refresh()
